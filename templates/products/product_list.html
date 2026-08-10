@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+  {% if category %}{{ category.name }} のギフト | GiftEC{% else %}特別なギフト一覧 | GiftEC{% endif %}
+{% endblock %}
+
+{% block content %}
+  <!-- Hero Section -->
+  <section class="hero">
+    <h1>大切な人に、心に残るギフトを。</h1>
+    <p>厳選された高品質なギフトカタログ。誕生日・結婚祝い・季節の贈り物に最適な一品をお届けします。</p>
+  </section>
+
+  <!-- Category Filter Bar -->
+  <div class="category-bar">
+    <a href="{% url 'products:product_list' %}" class="category-chip {% if not category %}active{% endif %}">
+      <i class="fa-solid fa-border-all"></i> すべて
+    </a>
+    {% for cat in categories %}
+      <a href="{% url 'products:products_by_category' cat.slug %}" class="category-chip {% if category and category.slug == cat.slug %}active{% endif %}">
+        {{ cat.name }}
+      </a>
+    {% endfor %}
+  </div>
+
+  <!-- Search Result Title -->
+  {% if keyword %}
+    <h2 style="margin-bottom: 1.5rem; font-size: 1.4rem;">
+      "{{ keyword }}" の検索結果 ({{ product_count }}件)
+    </h2>
+  {% endif %}
+
+  <!-- Product Grid -->
+  {% if products %}
+    <div class="product-grid">
+      {% for product in products %}
+        <div class="product-card">
+          <div class="product-img-wrapper">
+            {% if product.image %}
+              <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-img">
+            {% else %}
+              <div class="product-placeholder-img">
+                <i class="fa-solid fa-gift"></i>
+              </div>
+            {% endif %}
+          </div>
+          <div class="product-info">
+            <span class="product-category">{{ product.category.name }}</span>
+            <a href="{% url 'products:product_detail' product.category.slug product.slug %}" class="product-title">
+              {{ product.name }}
+            </a>
+            <div class="product-price">
+              <span>¥{{ product.price }} <small style="font-size: 0.8rem; font-weight: normal; color: var(--text-muted);"> (税込)</small></span>
+              <a href="{% url 'products:product_detail' product.category.slug product.slug %}" class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+                詳細を見る
+              </a>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div style="text-align: center; padding: 4rem 2rem; background: #ffffff; border-radius: 16px; border: 1px solid var(--card-border);">
+      <i class="fa-solid fa-box-open" style="font-size: 3.5rem; color: #cbd5e1; margin-bottom: 1rem;"></i>
+      <h3 style="font-size: 1.3rem; margin-bottom: 0.5rem;">該当する商品が見つかりませんでした</h3>
+      <p style="color: var(--text-muted); margin-bottom: 1.5rem;">管理画面から商品を登録するか、検索条件を変更してください。</p>
+      <a href="{% url 'products:product_list' %}" class="btn btn-secondary">商品一覧へ戻る</a>
+    </div>
+  {% endif %}
+{% endblock %}

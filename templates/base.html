@@ -1,0 +1,76 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}GiftEC | 特別な贈り物を送ろう{% endblock %}</title>
+  <meta name="description" content="高品質なギフト商品を取り揃えたオンラインECショップ。大切な人へのプレゼンにも。">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+  <!-- Header / Navigation -->
+  <nav class="navbar">
+    <a href="{% url 'products:product_list' %}" class="navbar-brand">
+      <i class="fa-solid fa-gift"></i> GiftEC
+    </a>
+
+    <form action="{% url 'products:product_list' %}" method="get" class="search-form">
+      <i class="fa-solid fa-magnifying-glass" style="color: #94a3b8;"></i>
+      <input type="text" name="keyword" class="search-input" placeholder="商品を検索..." value="{{ keyword|default:'' }}">
+    </form>
+
+    <ul class="nav-links">
+      <li>
+        <a href="{% url 'products:product_list' %}" class="nav-link">
+          <i class="fa-solid fa-store"></i> 商品一覧
+        </a>
+      </li>
+      <li>
+        <a href="{% url 'carts:cart_detail' %}" class="nav-link">
+          <i class="fa-solid fa-cart-shopping"></i> カート
+          <span class="badge-count">{{ cart_count|default:0 }}</span>
+        </a>
+      </li>
+      {% if user.is_authenticated %}
+        <li>
+          <a href="{% url 'admin:index' %}" class="nav-link" target="_blank">
+            <i class="fa-solid fa-user-gear"></i> 管理画面
+          </a>
+        </li>
+      {% else %}
+        <li>
+          <a href="{% url 'admin:index' %}" class="nav-link">
+            <i class="fa-solid fa-right-to-bracket"></i> ログイン
+          </a>
+        </li>
+      {% endif %}
+    </ul>
+  </nav>
+
+  <!-- Main Content Container -->
+  <main class="container">
+    {% if messages %}
+      <div style="margin-bottom: 1.5rem;">
+        {% for message in messages %}
+          <div style="padding: 1rem 1.5rem; border-radius: 8px; margin-bottom: 0.5rem; background: #e0e7ff; color: #3730a3; font-weight: 500;">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% block content %}
+    {% endblock %}
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <p>&copy; 2026 GiftEC. All rights reserved. Special Gifts for Everyone.</p>
+  </footer>
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

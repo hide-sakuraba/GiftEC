@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ product.name }} | GiftEC{% endblock %}
+
+{% block content %}
+  <div style="margin-bottom: 1.5rem;">
+    <a href="{% url 'products:product_list' %}" style="text-decoration: none; color: var(--text-muted); font-size: 0.95rem; font-weight: 500;">
+      <i class="fa-solid fa-arrow-left"></i> 商品一覧へ戻る
+    </a>
+  </div>
+
+  <div class="detail-grid">
+    <div class="detail-img-wrapper">
+      {% if product.image %}
+        <img src="{{ product.image.url }}" alt="{{ product.name }}" style="width: 100%; height: 100%; object-fit: cover;">
+      {% else %}
+        <div class="product-placeholder-img" style="height: 100%; border-radius: 12px;">
+          <i class="fa-solid fa-gift" style="font-size: 5rem;"></i>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="detail-info">
+      <span class="product-category" style="font-size: 0.9rem;">{{ product.category.name }}</span>
+      <h1>{{ product.name }}</h1>
+      <div class="detail-price">¥{{ product.price }} <span style="font-size: 1rem; font-weight: normal; color: var(--text-muted);">(税込)</span></div>
+      
+      <p class="detail-desc">{{ product.description|linebreaks }}</p>
+
+      <form action="{% url 'carts:add_cart' product.id %}" method="post">
+        {% csrf_token %}
+        <div style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem;">
+          <label style="font-weight: 600;">在庫状況:</label>
+          {% if product.stock > 0 %}
+            <span style="color: #16a34a; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> 在庫あり ({{ product.stock }}点)</span>
+          {% else %}
+            <span style="color: #dc2626; font-weight: 600;"><i class="fa-solid fa-circle-xmark"></i> 在庫なし</span>
+          {% endif %}
+        </div>
+
+        {% if product.stock > 0 %}
+          <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1.1rem;">
+            <i class="fa-solid fa-cart-plus"></i> カートに追加する
+          </button>
+        {% else %}
+          <button type="button" class="btn btn-secondary" style="width: 100%; padding: 1rem; font-size: 1.1rem;" disabled>
+            売り切れ
+          </button>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+{% endblock %}
