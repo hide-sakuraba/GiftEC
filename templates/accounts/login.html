@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}ログイン | GiftEC{% endblock %}
+
+{% block content %}
+  <div style="max-width: 420px; margin: 2rem auto;">
+    <div class="cart-card">
+      <h1 style="font-size: 1.8rem; text-align: center; margin-bottom: 1.5rem;">ログイン</h1>
+
+      <form method="post" action="{% url 'accounts:login' %}">
+        {% csrf_token %}
+        <div style="margin-bottom: 1.25rem;">
+          <label style="display: block; font-weight: 600; margin-bottom: 0.3rem;">ユーザー名</label>
+          <input type="text" name="username" class="form-input" placeholder="ユーザー名を入力" required>
+        </div>
+        <div style="margin-bottom: 1.5rem;">
+          <label style="display: block; font-weight: 600; margin-bottom: 0.3rem;">パスワード</label>
+          <input type="password" name="password" class="form-input" placeholder="パスワードを入力" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.9rem; font-size: 1rem;">
+          ログイン
+        </button>
+      </form>
+
+      <div style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem; color: var(--text-muted);">
+        アカウントをお持ちではありませんか？ <a href="{% url 'accounts:register' %}" style="color: var(--primary-color); font-weight: 600;">新規会員登録</a>
+      </div>
+    </div>
+  </div>
+{% endblock %}
