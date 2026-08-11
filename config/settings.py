@@ -123,11 +123,20 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Django 4.2以降の新しい設定形式
 STORAGES = {
-    'staticfiles': {
-        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+    "default": {
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "cloudinary_storage.storage.StaticCloudinaryStorage",
     },
 }
+
+# django-cloudinary-storage の互換性のために明示的に追加
+STATICFILES_STORAGE = "cloudinary_storage.storage.StaticCloudinaryStorage"
+DEFAULT_FILE_STORAGE = "cloudinary_storage. storage.MediaCloudinaryStorage"
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
