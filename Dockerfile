@@ -17,4 +17,5 @@ RUN python manage.py collectstatic --noinput
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 2 --threads 4 --access-logfile - --error-logfile -"]
+# CMD ["sh", "-c", "python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 2 --threads 4 --access-logfile - --error-logfile -"]
+CMD ["sh", "-c", "python manage.py collectstatic --no-input && python manage.py migrate && python manage.py create_superuser && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT"]
