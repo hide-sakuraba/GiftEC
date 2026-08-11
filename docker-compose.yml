@@ -1,4 +1,23 @@
 services:
+  web:
+    build: .
+    container_name: gift_ec_web
+    command: sh -c "python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000"
+    env_file:
+      - .env
+    environment:
+      USE_SQLITE: "False"
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_SSLMODE: disable
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+
   db:
     image: postgres:16-alpine
     container_name: gift_ec_postgres
@@ -11,6 +30,11 @@ services:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 volumes:
   postgres_data:

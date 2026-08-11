@@ -10,6 +10,9 @@ dependencies = [
     "psycopg[binary]>=3.1.0",
     "stripe>=8.0.0",
     "python-dotenv>=1.0.0",
+    "dj-database-url>=2.3.0",
+    "gunicorn>=23.0.0",
+    "whitenoise>=6.8.0",
 ]
 
 [build-system]
@@ -21,4 +24,3 @@ packages = ["accounts", "carts", "config", "orders", "products"]
 
 [tool.uv]
 package = false
-

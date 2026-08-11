@@ -33,6 +33,31 @@ uv run python manage.py runserver
 
 `http://127.0.0.1:8000/` を開いてください。商品データはDjango管理画面から登録できます。
 
+## Dockerでのローカル起動
+
+PostgreSQLを含めて起動する場合は、`.env` に `USE_SQLITE=False`、`DB_SSLMODE=disable` を設定します。
+
+```bash
+docker compose up --build
+```
+
+Webアプリは `http://localhost:8000/`、PostgreSQLはホストの `5433` ポートで利用できます。Webコンテナ起動時にマイグレーションも自動実行されます。
+
+## Render + Neonへのデプロイ
+
+このリポジトリにはRender Blueprintとして `render.yaml` を含めています。GitHubへpushした後、Render Dashboardから **New + > Blueprint** を選び、このリポジトリを指定してください。RenderはDockerfileをビルドして、コンテナ内でマイグレーション後にGunicornを起動します。
+
+1. Neonでプロジェクトを作成し、接続文字列を取得する。
+2. Renderの環境変数 `DATABASE_URL` にNeonの接続文字列を設定する。
+3. Renderが作成した `https://<service>.onrender.com` をStripeのWebhook URLとして登録する。
+   `https://<service>.onrender.com/orders/stripe/webhook/`
+4. Renderの環境変数に `STRIPE_PUBLIC_KEY`、`STRIPE_SECRET_KEY`、`STRIPE_WEBHOOK_SECRET` を設定する。
+5. Stripe Dashboardからテスト決済を行い、Render LogsでWebhook受信と注文の `Paid` 更新を確認する。
+
+`SECRET_KEY`、`DEBUG=False`、`USE_SQLITE=False`、`DB_SSLMODE=require` は `render.yaml` で設定されます。Renderの公開ホスト名は自動的にDjangoの `ALLOWED_HOSTS` と `CSRF_TRUSTED_ORIGINS` に追加されます。
+
+> Render無料Webサービスは15分無アクセスで停止し、ローカルファイルは永続化されません。そのため、`media/` にアップロードした商品画像を本番で保持するには、CloudinaryやS3互換ストレージなどの外部オブジェクトストレージを別途設定してください。
+
 ## Stripe Webhook（ローカル開発）
 
 Stripe CLIで以下のコマンドを実行し、表示された署名シークレットを `.env` の `STRIPE_WEBHOOK_SECRET` に設定します。
