@@ -1,6 +1,6 @@
 from django.db import models
 from products.models import Product
-
+from cloudinary.models import CloudinaryField
 
 class Cart(models.Model):
     cart_id = models.CharField('カートID', max_length=250, blank=True)
@@ -30,3 +30,10 @@ class CartItem(models.Model):
 
     def __str__(self):
         return f"{self.product.name} x {self.quantity}"
+
+class Product(models.Model):
+    name = models.CharField(max_length=100)
+    image = CloudinaryField('image', folder='products/', blank=True, null=True)
+
+    def __str__(self):
+        return self.name
