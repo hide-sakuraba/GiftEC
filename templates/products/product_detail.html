@@ -4,8 +4,8 @@
 {% block title %}{{ product.name }} | GiftEC{% endblock %}
 
 {% block content %}
-  <div style="margin-bottom: 1.5rem;">
-    <a href="{% url 'products:product_list' %}" style="text-decoration: none; color: var(--text-muted); font-size: 0.95rem; font-weight: 500;">
+  <div class="back-link-wrap">
+    <a href="{% url 'products:product_list' %}" class="back-link">
       <i class="fa-solid fa-arrow-left"></i> 商品一覧へ戻る
     </a>
   </div>
@@ -22,16 +22,16 @@
     </div>
 
     <div class="detail-info">
-      <span class="product-category" style="font-size: 0.9rem;">{{ product.category.name }}</span>
+      <span class="product-category detail-category">{{ product.category.name }}</span>
       <h1>{{ product.name }}</h1>
-      <div class="detail-price">¥{{ product.price }} <span style="font-size: 1rem; font-weight: normal; color: var(--text-muted);">(税込)</span></div>
+      <div class="detail-price">¥{{ product.price }} <span>(税込)</span></div>
       
       <p class="detail-desc">{{ product.description|linebreaks }}</p>
 
       <form action="{% url 'carts:add_cart' product.id %}" method="post">
         {% csrf_token %}
-        <div style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem;">
-          <label style="font-weight: 600;">在庫状況:</label>
+        <div class="stock-status">
+          <span>在庫状況</span>
           {% if product.stock > 0 %}
             <span style="color: #16a34a; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> 在庫あり ({{ product.stock }}点)</span>
           {% else %}
@@ -40,15 +40,41 @@
         </div>
 
         {% if product.stock > 0 %}
-          <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1.1rem;">
+          <button type="submit" class="btn btn-primary purchase-button">
             <i class="fa-solid fa-cart-plus"></i> カートに追加する
           </button>
         {% else %}
-          <button type="button" class="btn btn-secondary" style="width: 100%; padding: 1rem; font-size: 1.1rem;" disabled>
+          <button type="button" class="btn btn-secondary purchase-button" disabled>
             売り切れ
           </button>
         {% endif %}
       </form>
     </div>
   </div>
+
+  <section class="purchase-assurance" aria-label="ご利用案内">
+    <div><i class="fa-solid fa-gift"></i><strong>ギフトラッピング</strong><span>大切な贈り物を丁寧にお包みします</span></div>
+    <div><i class="fa-solid fa-truck-fast"></i><strong>お届け目安</strong><span>ご注文から2〜4営業日で発送</span></div>
+    <div><i class="fa-solid fa-shield-heart"></i><strong>安心のお買い物</strong><span>安全なStripe決済を採用しています</span></div>
+  </section>
+
+  {% if related_products %}
+    <section class="related-products">
+      <div class="section-heading"><p>MORE TO DISCOVER</p><h2>こちらの商品もおすすめです</h2></div>
+      <div class="product-grid">
+        {% for related in related_products %}
+          <article class="product-card">
+            <div class="product-img-wrapper">
+              {% if related.image %}<img src="{{ related.image.url }}" alt="{{ related.name }}" class="product-img">{% else %}<div class="product-placeholder-img"><i class="fa-solid fa-gift"></i></div>{% endif %}
+            </div>
+            <div class="product-info">
+              <span class="product-category">{{ related.category.name }}</span>
+              <a href="{% url 'products:product_detail' related.category.slug related.slug %}" class="product-title">{{ related.name }}</a>
+              <div class="product-price"><span>¥{{ related.price }} <small>(税込)</small></span></div>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
 {% endblock %}

@@ -17,7 +17,7 @@
       <i class="fa-solid fa-gift"></i> GiftEC
     </a>
 
-    <form action="{% url 'products:product_list' %}" method="get" class="search-form">
+    <form action="{% url 'products:product_list' %}" method="get" class="search-form" role="search">
       <i class="fa-solid fa-magnifying-glass" style="color: #94a3b8;"></i>
       <input type="text" name="keyword" class="search-input" placeholder="商品を検索..." value="{{ keyword|default:'' }}">
     </form>
@@ -40,11 +40,13 @@
             <i class="fa-solid fa-user"></i> {{ user.username }} 様
           </span>
         </li>
-        <li>
+        {% if user.is_staff %}
+        <li class="admin-link">
           <a href="{% url 'admin:index' %}" class="nav-link" target="_blank">
             <i class="fa-solid fa-user-gear"></i> 管理画面
           </a>
         </li>
+        {% endif %}
         <li>
           <a href="{% url 'accounts:logout' %}" class="nav-link">
             <i class="fa-solid fa-right-from-bracket"></i> ログアウト
@@ -68,9 +70,9 @@
   <!-- Main Content Container -->
   <main class="container">
     {% if messages %}
-      <div style="margin-bottom: 1.5rem;">
+      <div class="message-list" aria-live="polite">
         {% for message in messages %}
-          <div style="padding: 1rem 1.5rem; border-radius: 8px; margin-bottom: 0.5rem; background: #e0e7ff; color: #3730a3; font-weight: 500;">
+          <div class="message message-{{ message.tags|default:'info' }}">
             {{ message }}
           </div>
         {% endfor %}

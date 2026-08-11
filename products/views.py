@@ -8,6 +8,7 @@ def product_list(request, category_slug=None):
     categories = Category.objects.all()
     products = Product.objects.filter(is_available=True)
     keyword = request.GET.get('keyword', '').strip()
+    sort = request.GET.get('sort', 'newest')
 
     if category_slug:
         category = get_object_or_404(Category, slug=category_slug)
@@ -18,12 +19,19 @@ def product_list(request, category_slug=None):
             Q(name__icontains=keyword) | Q(description__icontains=keyword)
         )
 
+    products = products.order_by({
+        'price_asc': 'price',
+        'price_desc': '-price',
+        'newest': '-created_at',
+    }.get(sort, '-created_at'))
+
     context = {
         'category': category,
         'categories': categories,
         'products': products,
         'product_count': products.count(),
         'keyword': keyword,
+        'sort': sort,
     }
     return render(request, 'products/product_list.html', context)
 

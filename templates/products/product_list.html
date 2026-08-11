@@ -8,8 +8,10 @@
 {% block content %}
   <!-- Hero Section -->
   <section class="hero">
+    <p class="hero-eyebrow">CURATED GIFTS FOR EVERY MOMENT</p>
     <h1>大切な人に、心に残るギフトを。</h1>
     <p>厳選された高品質なギフトカタログ。誕生日・結婚祝い・季節の贈り物に最適な一品をお届けします。</p>
+    <a href="#product-list" class="btn btn-light hero-cta">人気のギフトを見る <i class="fa-solid fa-arrow-down"></i></a>
   </section>
 
   <!-- Category Filter Bar -->
@@ -24,12 +26,21 @@
     {% endfor %}
   </div>
 
-  <!-- Search Result Title -->
-  {% if keyword %}
-    <h2 style="margin-bottom: 1.5rem; font-size: 1.4rem;">
-      "{{ keyword }}" の検索結果 ({{ product_count }}件)
-    </h2>
-  {% endif %}
+  <div class="product-toolbar" id="product-list">
+    <div>
+      <h2>{% if keyword %}「{{ keyword }}」の検索結果{% elif category %}{{ category.name }}{% else %}ギフトを探す{% endif %}</h2>
+      <p>{{ product_count }}件の商品</p>
+    </div>
+    <form method="get" class="sort-form">
+      {% if keyword %}<input type="hidden" name="keyword" value="{{ keyword }}">{% endif %}
+      <label for="sort">並び替え</label>
+      <select id="sort" name="sort" onchange="this.form.submit()">
+        <option value="newest" {% if sort == 'newest' %}selected{% endif %}>新着順</option>
+        <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>価格が低い順</option>
+        <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>価格が高い順</option>
+      </select>
+    </form>
+  </div>
 
   <!-- Product Grid -->
   {% if products %}
@@ -61,10 +72,10 @@
       {% endfor %}
     </div>
   {% else %}
-    <div style="text-align: center; padding: 4rem 2rem; background: #ffffff; border-radius: 16px; border: 1px solid var(--card-border);">
+    <div class="empty-state">
       <i class="fa-solid fa-box-open" style="font-size: 3.5rem; color: #cbd5e1; margin-bottom: 1rem;"></i>
-      <h3 style="font-size: 1.3rem; margin-bottom: 0.5rem;">該当する商品が見つかりませんでした</h3>
-      <p style="color: var(--text-muted); margin-bottom: 1.5rem;">管理画面から商品を登録するか、検索条件を変更してください。</p>
+      <h3>該当する商品が見つかりませんでした</h3>
+      <p>検索条件を変更して、もう一度お試しください。</p>
       <a href="{% url 'products:product_list' %}" class="btn btn-secondary">商品一覧へ戻る</a>
     </div>
   {% endif %}

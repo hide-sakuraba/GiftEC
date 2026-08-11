@@ -1,6 +1,8 @@
 import datetime
+import uuid
 import stripe
 from django.conf import settings
+from django.db import transaction
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
@@ -9,6 +11,7 @@ from carts.models import Cart, CartItem
 from carts.views import _cart_id
 from .models import Order, OrderItem
 from .forms import OrderForm
+from products.models import Product
 
 
 def checkout(request, total=0, quantity=0, cart_items=None):
@@ -38,16 +41,22 @@ def checkout(request, total=0, quantity=0, cart_items=None):
                 data.user = request.user
             data.total_price = grand_total
             data.status = 'Pending'  # will be updated after payment
-            data.save()
-
             # Generate order number
             yr = int(datetime.date.today().strftime('%Y'))
             mt = int(datetime.date.today().strftime('%m'))
             dt = int(datetime.date.today().strftime('%d'))
             current_date = datetime.date(yr, mt, dt).strftime("%Y%m%d")
-            order_number = current_date + str(data.id)
+            order_number = f"{current_date}-{uuid.uuid4().hex[:8].upper()}"
             data.order_number = order_number
             data.save()
+
+            for item in cart_items:
+                OrderItem.objects.create(
+                    order=data,
+                    product=item.product,
+                    price=item.product.price,
+                    quantity=item.quantity,
+                )
 
             # Create Stripe Checkout Session
             domain = request.build_absolute_uri('/')
@@ -65,6 +74,15 @@ def checkout(request, total=0, quantity=0, cart_items=None):
                     },
                     'quantity': item.quantity,
                 })
+            if tax:
+                line_items.append({
+                    'price_data': {
+                        'currency': 'jpy',
+                        'product_data': {'name': '消費税'},
+                        'unit_amount': tax,
+                    },
+                    'quantity': 1,
+                })
             try:
                 session = stripe.checkout.Session.create(
                     payment_method_types=['card'],
@@ -72,25 +90,18 @@ def checkout(request, total=0, quantity=0, cart_items=None):
                     mode='payment',
                     success_url=success_url,
                     cancel_url=cancel_url,
+                    metadata={'order_number': order_number},
                 )
             except stripe.error.StripeError as e:
                 messages.error(request, f'決済の準備中にエラーが発生しました: {e.user_message}')
                 data.delete()
                 return redirect('orders:checkout')
 
-            for item in cart_items:
-                order_item = OrderItem()
-                order_item.order = data
-                order_item.product = item.product
-                order_item.price = item.product.price
-                order_item.quantity = item.quantity
-                order_item.save()
-
-                product = item.product
-                product.stock -= item.quantity
-                product.save()
-
-            CartItem.objects.filter(cart=cart).delete()
+            data.stripe_checkout_session_id = session.id
+            data.save(update_fields=['stripe_checkout_session_id', 'updated_at'])
+            request.session['order_access_numbers'] = list(
+                set(request.session.get('order_access_numbers', []) + [order_number])
+            )[-10:]
 
             return redirect(session.url, permanent=False)
         else:
@@ -117,6 +128,19 @@ def checkout(request, total=0, quantity=0, cart_items=None):
 
 def order_complete(request, order_number):
     order = get_object_or_404(Order, order_number=order_number)
+
+    is_owner = request.user.is_authenticated and order.user_id == request.user.id
+    is_guest_order_in_session = order.user_id is None and order_number in request.session.get('order_access_numbers', [])
+    if not (is_owner or is_guest_order_in_session):
+        messages.error(request, 'この注文情報を表示する権限がありません。')
+        return redirect('products:product_list')
+
+    if order.status == 'Paid':
+        try:
+            cart = Cart.objects.get(cart_id=_cart_id(request))
+            CartItem.objects.filter(cart=cart).delete()
+        except Cart.DoesNotExist:
+            pass
     order_items = OrderItem.objects.filter(order=order)
     subtotal = sum(item.sub_total() for item in order_items)
 
@@ -152,19 +176,40 @@ def stripe_webhook(request):
     # checkout.session.completed イベントを処理
     if event['type'] == 'checkout.session.completed':
         session = event['data']['object']
+        order_number = session.get('metadata', {}).get('order_number')
+        if not order_number or session.get('payment_status') != 'paid':
+            return HttpResponse(status=200)
 
-        # success_url に埋め込んだ注文番号を取得
-        # 例: http://localhost:8000/orders/order_complete/20260811123/
-        success_url = session.get('success_url', '')
-        order_number = success_url.rstrip('/').split('/')[-1]
+        with transaction.atomic():
+            try:
+                order = Order.objects.select_for_update().get(
+                    order_number=order_number,
+                    stripe_checkout_session_id=session.get('id'),
+                )
+            except Order.DoesNotExist:
+                return HttpResponse(status=200)
 
-        try:
-            order = Order.objects.get(order_number=order_number)
+            if order.status != 'Pending':
+                return HttpResponse(status=200)
+
+            order_items = list(order.items.select_related('product').all())
+            product_ids = [item.product_id for item in order_items]
+            products = {
+                product.id: product
+                for product in Product.objects.select_for_update().filter(id__in=product_ids)
+            }
+            if any(products[item.product_id].stock < item.quantity for item in order_items):
+                order.status = 'Cancelled'
+                order.save(update_fields=['status', 'updated_at'])
+                return HttpResponse(status=200)
+
+            for item in order_items:
+                product = products[item.product_id]
+                product.stock -= item.quantity
+                product.save(update_fields=['stock', 'updated_at'])
+
             order.status = 'Paid'
             order.stripe_payment_intent_id = session.get('payment_intent', '')
-            order.save()
-        except Order.DoesNotExist:
-            # 注文が見つからない場合も 200 を返す（Stripe のリトライを防ぐ）
-            pass
+            order.save(update_fields=['status', 'stripe_payment_intent_id', 'updated_at'])
 
     return HttpResponse(status=200)

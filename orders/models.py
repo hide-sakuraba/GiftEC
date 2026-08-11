@@ -21,6 +21,7 @@ class Order(models.Model):
     postal_code = models.CharField('郵便番号', max_length=10)
     total_price = models.IntegerField('合計金額')
     status = models.CharField('注文ステータス', max_length=20, choices=STATUS_CHOICES, default='Pending')
+    stripe_checkout_session_id = models.CharField('Stripe Checkout Session ID', max_length=255, blank=True, unique=True, null=True)
     stripe_payment_intent_id = models.CharField('Stripe Payment Intent ID', max_length=255, blank=True)
     created_at = models.DateTimeField('注文日時', auto_now_add=True)
     updated_at = models.DateTimeField('更新日時', auto_now=True)
